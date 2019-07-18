@@ -1,0 +1,85 @@
+<script type="text/javascript">
+var data = [
+    { parentId: 0, id: 1, value: '1' }, 
+    { parentId: 3, id: 2, value: '2' },
+    { parentId: 0, id: 3, value: '3' },
+    { parentId: 1, id: 4, value: '4' }, 
+    { parentId: 1, id: 5, value: '5' },
+    { parentId: 11, id: 6, value: '6' },
+    { parentId: 10, id: 7, value: '7' },
+    { parentId: 10, id: 8, value: '8' },
+    { parentId: 11, id: 9, value: '9' },
+    { parentId: 11, id: 10, value: '10' },
+    { parentId: 2, id: 11, value: '11' },
+];
+
+/**
+请把该数据整理为树状结构, 该树每个节点的结构如下, 
+node = {
+    children: [],
+    id: id,
+    value: value
+}
+**/
+function tree(data){
+    let nodes = {}, flag = false // flag为pre.children发生时的标记
+    nodes.children = []
+    nodes.id = 0
+    nodes.parentId = 0
+    let result = data.reduce(function(pre, cur, index, arr){   // pre为nodes树
+        cur.children = []
+        function _findParent(pre, cur){
+            if(pre.children.length>0){                          // 只要有children都找，不然结束递归。先找子再找父
+                try{
+                    pre.children.forEach(function(item,key){
+                        if(cur.id == item.parentId){                //父找，找到交换
+                            let tmp=item
+                            delete pre.children[key]
+                            cur.children.push(tmp)
+                            if(cur.parentId == 0){
+                                pre.children.push(cur)
+                                flag = true
+                                throw new Error('find parent')
+                            }
+                        }else{  // 找不到就递归
+                            _findParent(pre.children[key],cur)
+                        }
+                    })
+                }catch(e){
+                    // console.error(e)
+                }
+            }
+        }
+        _findParent(pre,cur)
+        function _findChild(pre, cur){
+            if(pre.children.length>0){                          // 只要有children都找，不然结束递归。先找子再找父
+                try{
+                    pre.children.forEach(function(item,key){
+                        if(cur.parentId == item.id){                //子找，找到加入到children
+                            pre.children[key].children.push(cur)
+                            flag = true
+                            throw new Error('find child')
+                        }else{  // 找不到就递归
+                            _findChild(pre.children[key],cur)
+                        }
+                    })
+                }catch(e){
+                    // console.error(e)
+                }
+                    
+            }
+        }
+        _findChild(pre,cur)
+        if(!flag){
+            pre.children.push(cur)
+        }else{
+            flag = false
+        }
+        return pre
+    },nodes)
+    return result
+}
+
+
+
+</script>
