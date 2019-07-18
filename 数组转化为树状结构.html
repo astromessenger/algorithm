@@ -80,6 +80,30 @@ function tree(data){
     return result
 }
 
+let result = tree(data)
+console.log('result', result)
+
+//1.遍历树的递归写法
+function deepTraversal(tree){
+    let result = tree.map(val=>{
+        if(val.children.length>0){
+            return {
+                    children: deepTraversal(val.children),
+                    id: val.id,
+                    value: val.value
+                }
+        }else{
+            return {
+                    children: [],
+                    id: val.id,
+                    value: val.value
+                }
+        }
+    })
+    return result; 
+}
+console.log(deepTraversal(result.children))
+
 
 
 </script>
