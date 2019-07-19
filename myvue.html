@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>vue-test</title>
+</head>
+<body>
+  <div id="app">
+    <span>title：</span><span v-text="text"></span><br>
+    <span>Price:￥ </span><span v-text="price"></span><br>
+    <span>Total:￥ </span><span v-text="total"></span><br>
+    <button v-click="addPrice">
+      加1
+    </button>
+    <button v-click="decPrice">
+      减1
+    </button>
+  </div>
+
+</body>
+<script type="text/javascript">
+  class Vue {
+    constructor(options) {
+      this.$options = options;
+      this.$el = document.querySelector(options.el);
+      this._data = options.data;
+      this._methods = options.methods;
+      this._bindClick();
+
+      Object.keys(options.data).forEach(key => this._proxy(key))
+      observer(options.data)
+      watch(this, this._render.bind(this), this._update.bind(this))
+    }
+    _proxy(key) {
+      console.log('_proxy', key)
+      const self = this
+      Object.defineProperty(self, key, {
+        configurable: true,
+        enumerable: true,
+        get: function proxyGetter () {
+          console.log('_proxy get')
+          return self._data[key]
+        },
+        set: function proxySetter (val) {
+          console.log('_proxy set')
+          self._data[key] = val
+        }
+      })
+    }
+    _bindClick() {
+      console.log("_bindClick");
+      var _this=this;
+      let textDOMs=_this.$el.querySelectorAll('[v-click]');
+      for (let i = 0; i < textDOMs.length; i++) {
+        if (textDOMs[i].hasAttribute('v-click')) {
+          textDOMs[i].onclick = (function () {
+            let attrVal = textDOMs[i].getAttribute('v-click');
+            return _this._methods[attrVal].bind(_this._data);
+          })();
+        }
+      }
+    }
+    _update() {
+      console.log("_update");
+      this._render.call(this)
+    }
+    _render() {
+      console.log("_render");
+      let textDOMs=this.$el.querySelectorAll('[v-text]'), bindText;
+      for(let i=0;i<textDOMs.length;i++){
+        bindText=textDOMs[i].getAttribute('v-text');
+        let data = this._data[bindText];
+        if(data.toString()){
+          textDOMs[i].innerHTML=data.toString();
+        }      
+      }
+    }
+  }
+
+  function observer(value){
+    console.log('observer')
+    Object.keys(value).forEach((key) => defineReactive(value, key, value[key]))
+  }
+
+  function defineReactive(obj, key, val) {
+    const dep = new Dep()
+    Object.defineProperty(obj, key, {
+      enumerable: true,
+      configurable: true,
+      get: ()=>{
+        if(Dep.target){
+          dep.add(Dep.target)
+          console.log('get', val)
+        }
+        return val
+      },
+      set: newVal => {
+        if(newVal === val)
+          return
+        val = newVal
+        console.log('set', val)
+        dep.notify()
+      }
+    })
+  }
+  function watch(vm, exp, cb){
+    console.log('watch')
+    Dep.target = new Watcher(vm,cb);
+    return exp()
+  }
+
+  class Watcher {
+    constructor(vm, cb) {
+      this.cb = cb
+      this.vm = vm
+    }
+    update(){
+      this.run()
+    }
+    run(){
+      this.cb.call(this.vm)
+    }
+  }
+
+  class Dep {
+    constructor() {
+      this.subs = []
+    }
+    add(watcher) {
+      this.subs = []
+      this.subs.push(watcher)
+    }
+    notify() {
+      console.log('notify')
+      this.subs.forEach((watcher) => {
+        watcher.cb()
+      })
+    }
+  }
+  // Dep.target=null;
+
+  var demo = new Vue({
+    el: '#app',
+    data: {
+      text: "hello world",
+      price: 0,
+      total: 0,
+    },
+    methods: {
+      addPrice() {
+        console.warn('addPrice')
+        this.price = this.price + 1;
+        this.total = this.price * 3.14159265768;
+      },
+      decPrice() {
+        console.warn('decPrice')
+        this.price = this.price -1;
+        this.total = this.price * 3.14159265768;
+      }
+    }
+  })
+  setTimeout(function(){
+    console.warn('setTimeout')
+    demo.text = "hello new world"
+  }, 2000)
+</script>
+</html>
